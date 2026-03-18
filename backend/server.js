@@ -12,7 +12,8 @@ app.use("/booking", require("./routes/booking"));
 app.use("/riwayat", require("./routes/riwayat")); 
 
 
-app.listen(3000, () => console.log("Server jalan di 3000"));
+app.listen(3000, () => 
+  console.log("Server jalan di 3000"));
 
 
 // API LIHAT JADWAL LAPANGAN
