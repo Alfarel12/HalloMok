@@ -12,20 +12,51 @@ app.use("/booking", require("./routes/booking"));
 
 app.listen(3000, () => console.log("Server jalan di 3000"));
 
+
 // API LIHAT JADWAL LAPANGAN
 app.get("/jadwal", (req, res) => {
+
   const { lapangan_id, tanggal } = req.query;
 
+  // ambil hari dari tanggal
+  const hari = new Date(tanggal).toLocaleDateString("id-ID", {
+    weekday: "long"
+  });
+
   db.query(
-    `SELECT booking.*, users.nama, lapangan.nama_lapangan 
-     FROM booking
-     JOIN users ON booking.user_id = users.id
-     JOIN lapangan ON booking.lapangan_id = lapangan.id
-     WHERE booking.lapangan_id = ? AND booking.tanggal = ?`,
+    `SELECT jam FROM booking
+     WHERE lapangan_id = ? AND tanggal = ?`,
     [lapangan_id, tanggal],
     (err, result) => {
+
       if (err) return res.send(err);
-      res.json(result);
+
+      // daftar jam yang tersedia
+      const semuaJam = [
+        "16:00:00",
+        "17:00:00",
+        "18:00:00",
+        "19:00:00",
+        "20:00:00",
+        "21:00:00"
+      ];
+
+      // jam yang sudah dibooking
+      const jamTerbooking = result.map(r => r.jam);
+
+      // jam yang masih tersedia
+      const jamTersedia = semuaJam.filter(
+        jam => !jamTerbooking.includes(jam)
+      );
+
+      res.json({
+        tanggal: tanggal,
+        hari: hari,
+        jam_terbooking: jamTerbooking,
+        jam_tersedia: jamTersedia
+      });
+
     }
   );
+
 });
