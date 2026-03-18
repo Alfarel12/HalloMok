@@ -9,6 +9,8 @@ app.use(express.json());
 app.use("/auth", require("./routes/auth"));
 app.use("/lapangan", require("./routes/lapangan"));
 app.use("/booking", require("./routes/booking"));
+app.use("/riwayat", require("./routes/riwayat")); 
+
 
 app.listen(3000, () => console.log("Server jalan di 3000"));
 
@@ -41,8 +43,9 @@ app.get("/jadwal", (req, res) => {
         "21:00:00"
       ];
 
-      // jam yang sudah dibooking
+      // riwayat booking
       const jamTerbooking = result.map(r => r.jam);
+      
 
       // jam yang masih tersedia
       const jamTersedia = semuaJam.filter(
