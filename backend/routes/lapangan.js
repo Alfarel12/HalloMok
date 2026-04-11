@@ -1,6 +1,23 @@
 const router = require("express").Router();
 const db = require("../db");
 
+router.delete("/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query(
+    "DELETE FROM lapangan WHERE id = ?",
+    [id],
+    (err, result) => {
+      if (err) return res.send(err);
+
+      res.json({
+        status: "success",
+        message: "Lapangan berhasil dihapus"
+      });
+    }
+  );
+});
+
 
 // ✅ GET semua lapangan
 router.get("/", (req, res) => {
