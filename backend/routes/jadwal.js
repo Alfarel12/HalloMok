@@ -5,7 +5,7 @@ const db = require('../db')
 // GET semua jadwal
 router.get('/', (req, res) => {
   db.query(
-    `SELECT jadwal.id, lapangan.nama AS nama_lapangan 
+    `SELECT jadwal.*, lapangan.nama AS nama_lapangan 
      FROM jadwal 
      LEFT JOIN lapangan ON jadwal.lapangan_id = lapangan.id`,
     (err, result) => {
