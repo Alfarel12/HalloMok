@@ -4,10 +4,9 @@ const db = require("./db");
 
 const app = express();
 
-// MIDDLEWARE
+// ================== MIDDLEWARE ==================
 app.use(cors());
 app.use(express.json());
-
 
 // ================== ROUTES ==================
 
@@ -17,6 +16,9 @@ app.use("/auth", require("./routes/auth"));
 // LAPANGAN
 app.use("/lapangan", require("./routes/lapangan"));
 
+// JADWAL CRUD (ADMIN)
+app.use("/jadwal", require("./routes/jadwal"));
+
 // BOOKING
 app.use("/booking", require("./routes/booking"));
 
@@ -24,9 +26,10 @@ app.use("/booking", require("./routes/booking"));
 app.use("/riwayat", require("./routes/riwayat"));
 
 
-// ================== API JADWAL ==================
+// ================== API CEK JADWAL ==================
+// (DIGANTI DARI /jadwal → /cek-jadwal BIAR TIDAK BENTROK)
 
-app.get("/jadwal", (req, res) => {
+app.get("/cek-jadwal", (req, res) => {
   const { lapangan_id, tanggal } = req.query;
 
   // VALIDASI INPUT
