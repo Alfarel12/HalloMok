@@ -1,19 +1,20 @@
 const router = require("express").Router();
 const db = require("../db");
 
-// helper status booking
+// ================== HELPER ==================
 function getStatus(tanggal, jam) {
   const now = new Date();
   const bookingTime = new Date(`${tanggal} ${jam}`);
   return bookingTime < now ? "selesai" : "upcoming";
 }
 
-// ✅ GET semua riwayat booking
+// ================== GET SEMUA RIWAYAT ==================
 router.get("/", async (req, res) => {
   try {
     const [result] = await db.query(`
       SELECT 
         booking.id,
+        booking.user_id,
         booking.tanggal,
         booking.jam,
         lapangan.nama_lapangan
@@ -24,6 +25,7 @@ router.get("/", async (req, res) => {
 
     const data = result.map((item) => ({
       id: item.id,
+      user_id: item.user_id,
       tanggal: item.tanggal,
       hari: new Date(item.tanggal).toLocaleDateString("id-ID", {
         weekday: "long",
@@ -33,19 +35,71 @@ router.get("/", async (req, res) => {
       status: getStatus(item.tanggal, item.jam),
     }));
 
-    res.json({
+    res.status(200).json({
+      status: "success",
       total: data.length,
-      riwayat: data,
+      data,
     });
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+    });
   }
 });
 
 
-// ✅ GET riwayat by tanggal
+// ================== GET RIWAYAT BY USER ==================
+router.get("/user/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const [result] = await db.query(
+      `SELECT 
+        booking.id,
+        booking.user_id,
+        booking.tanggal,
+        booking.jam,
+        lapangan.nama_lapangan
+       FROM booking
+       JOIN lapangan ON booking.lapangan_id = lapangan.id
+       WHERE booking.user_id = ?
+       ORDER BY booking.tanggal DESC`,
+      [user_id]
+    );
+
+    const data = result.map((item) => ({
+      id: item.id,
+      user_id: item.user_id,
+      tanggal: item.tanggal,
+      hari: new Date(item.tanggal).toLocaleDateString("id-ID", {
+        weekday: "long",
+      }),
+      jam: item.jam,
+      lapangan: item.nama_lapangan,
+      status: getStatus(item.tanggal, item.jam),
+    }));
+
+    res.status(200).json({
+      status: "success",
+      user_id,
+      total: data.length,
+      data,
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+    });
+  }
+});
+
+
+// ================== GET RIWAYAT BY TANGGAL ==================
 router.get("/tanggal/:tanggal", async (req, res) => {
   const { tanggal } = req.params;
 
@@ -53,6 +107,7 @@ router.get("/tanggal/:tanggal", async (req, res) => {
     const [result] = await db.query(
       `SELECT 
         booking.id,
+        booking.user_id,
         booking.tanggal,
         booking.jam,
         lapangan.nama_lapangan
@@ -65,6 +120,7 @@ router.get("/tanggal/:tanggal", async (req, res) => {
 
     const data = result.map((item) => ({
       id: item.id,
+      user_id: item.user_id,
       tanggal: item.tanggal,
       hari: new Date(item.tanggal).toLocaleDateString("id-ID", {
         weekday: "long",
@@ -74,15 +130,19 @@ router.get("/tanggal/:tanggal", async (req, res) => {
       status: getStatus(item.tanggal, item.jam),
     }));
 
-    res.json({
+    res.status(200).json({
+      status: "success",
       tanggal,
       total: data.length,
-      riwayat: data,
+      data,
     });
 
   } catch (err) {
     console.log(err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({
+      status: "error",
+      message: "Server error",
+    });
   }
 });
 
