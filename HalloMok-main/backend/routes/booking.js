@@ -1,36 +1,47 @@
-const router = require("express").Router();
+const express = require("express");
+const router = express.Router();
 const db = require("../db");
 
-// ✅ GET semua booking
-router.get("/", async (req, res) => {
-  try {
-    const [data] = await db.query("SELECT * FROM booking");
-    res.json(data);
-  } catch (err) {
-    console.log("ERROR GET BOOKING:", err);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ✅ POST booking
 router.post("/", async (req, res) => {
-  const { user_id, lapangan_id, tanggal, jam } = req.body;
-
-  if (!user_id || !lapangan_id || !tanggal || !jam) {
-    return res.status(400).json({ message: "Semua field wajib diisi" });
-  }
-
   try {
+    console.log("BODY MASUK:", req.body); // 🔥 debug
+
+    const { user_id, lapangan_id, tanggal, jam } = req.body;
+
+    // validasi
+    if (!user_id || !lapangan_id || !tanggal || !jam) {
+      return res.status(400).json({
+        message: "Data tidak lengkap",
+      });
+    }
+
+    // cek lapangan ada atau tidak
+    const [lapangan] = await db.query(
+      "SELECT * FROM lapangan WHERE id = ?",
+      [lapangan_id]
+    );
+
+    if (lapangan.length === 0) {
+      return res.status(400).json({
+        message: "Lapangan tidak ditemukan",
+      });
+    }
+
+    // insert booking
     await db.query(
-      "INSERT INTO booking (user_id, lapangan_id, tanggal, jam) VALUES (?,?,?,?)",
+      "INSERT INTO booking (user_id, lapangan_id, tanggal, jam) VALUES (?, ?, ?, ?)",
       [user_id, lapangan_id, tanggal, jam]
     );
 
-    res.json({ message: "Booking berhasil" });
+    res.json({
+      message: "Booking berhasil ditambahkan",
+    });
 
   } catch (err) {
-    console.log("ERROR POST BOOKING:", err);
-    res.status(500).json({ message: err.message });
+    console.error("ERROR ASLI:", err); // 
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 
