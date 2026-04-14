@@ -1,56 +1,63 @@
-console.log("AUTH KELOAD");
-const router = require("express").Router();
+const express = require("express");
+const router = express.Router();
 const db = require("../db");
 const bcrypt = require("bcrypt");
 
-router.get("/", (req, res) => {
-  res.send("AUTH HIDUP");
-});
 
-// ================= REGISTER =================
-router.post("/register", async (req, res) => {
+// ================== LOGIN (GET - BISA DI BROWSER) ==================
+router.get("/login", async (req, res) => {
+  const { email, password } = req.query;
+
+  // kalau belum isi query
+  if (!email || !password) {
+    return res.send(`
+      <h2>Login API</h2>
+      <p>Gunakan format:</p>
+      <code>/auth/login?email=xxx&password=xxx</code>
+    `);
+  }
+
   try {
-    const { username, email, password } = req.body;
-
-    if (!username || !email || !password) {
-      return res.status(400).json({
-        message: "Semua field wajib diisi"
-      });
-    }
-
-    // cek email
-    const [cek] = await db.query(
+    const [user] = await db.query(
       "SELECT * FROM users WHERE email = ?",
       [email]
     );
 
-    if (cek.length > 0) {
-      return res.status(400).json({
-        message: "Email sudah terdaftar"
-      });
+    if (user.length === 0) {
+      return res.json({ message: "Email tidak ditemukan" });
     }
 
-    const hash = await bcrypt.hash(password, 10);
-
-    await db.query(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-      [username, email, hash]
+    const validPassword = await bcrypt.compare(
+      password,
+      user[0].password
     );
 
-    res.json({ message: "Register berhasil" });
+    if (!validPassword) {
+      return res.json({ message: "Password salah" });
+    }
+
+    res.json({
+      message: "Login berhasil",
+      user: {
+        id: user[0].id,
+        nama: user[0].nama,
+        email: user[0].email,
+        role: user[0].role,
+      },
+    });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.json({ message: "Server error" });
   }
 });
 
 
-// ================= LOGIN =================
+// ================== LOGIN (POST - BEST PRACTICE) ==================
 router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
+  try {
     const [user] = await db.query(
       "SELECT * FROM users WHERE email = ?",
       [email]
@@ -58,26 +65,36 @@ router.post("/login", async (req, res) => {
 
     if (user.length === 0) {
       return res.status(400).json({
-        message: "User tidak ditemukan"
+        message: "Email tidak ditemukan",
       });
     }
 
-    const valid = await bcrypt.compare(password, user[0].password);
+    const validPassword = await bcrypt.compare(
+      password,
+      user[0].password
+    );
 
-    if (!valid) {
+    if (!validPassword) {
       return res.status(400).json({
-        message: "Password salah"
+        message: "Password salah",
       });
     }
 
     res.json({
       message: "Login berhasil",
-      user: user[0]
+      user: {
+        id: user[0].id,
+        nama: user[0].nama,
+        email: user[0].email,
+        role: user[0].role,
+      },
     });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 
