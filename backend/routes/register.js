@@ -3,13 +3,22 @@ const router = express.Router();
 const db = require("../db");
 const bcrypt = require("bcrypt");
 
-// REGISTER
-router.post("/register", async (req, res) => {
+router.get("/", (req, res) => {
+  res.send("Endpoint register aktif. Gunakan POST untuk kirim data.");
+});
+router.post("/", async (req, res) => {
   const { nama, email, password } = req.body;
 
+  if (!nama || !email || !password) {
+    return res.status(400).json({
+      message: "Semua field wajib diisi",
+    });
+  }
   try {
-    // cek email udah ada belum
-    const [user] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    const [user] = await db.query(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
 
     if (user.length > 0) {
       return res.status(400).json({
@@ -17,10 +26,8 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // insert user
     await db.query(
       "INSERT INTO users (nama, email, password) VALUES (?, ?, ?)",
       [nama, email, hashedPassword]

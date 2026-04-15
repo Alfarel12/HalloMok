@@ -13,7 +13,7 @@ app.use("/lapangan", require("./routes/lapangan"));
 app.use("/booking", require("./routes/booking"));
 app.use("/riwayat", require("./routes/riwayat")); 
 app.use("/jadwal", require("./routes/jadwal"));
-
+app.use("/register", require("./routes/register"));
 // ROOT (biar ga "Cannot GET /")
 app.get("/", (req, res) => {
   res.send("API Futsal Booking Jalan 🚀");
