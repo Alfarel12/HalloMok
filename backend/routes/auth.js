@@ -2,17 +2,16 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-
-// ================== LOGIN (GET - BISA DI BROWSER) ==================
+// ================== GET LOGIN (BROWSER) ==================
 router.get("/login", async (req, res) => {
   const { email, password } = req.query;
 
-  // kalau belum isi query
   if (!email || !password) {
     return res.send(`
       <h2>Login API</h2>
-      <p>Gunakan format:</p>
+      <p>Gunakan:</p>
       <code>/auth/login?email=xxx&password=xxx</code>
     `);
   }
@@ -36,14 +35,16 @@ router.get("/login", async (req, res) => {
       return res.json({ message: "Password salah" });
     }
 
+    const token = jwt.sign(
+      { id: user[0].id, email: user[0].email },
+      "secretkey",
+      { expiresIn: "1h" }
+    );
+
     res.json({
       message: "Login berhasil",
-      user: {
-        id: user[0].id,
-        nama: user[0].nama,
-        email: user[0].email,
-        role: user[0].role,
-      },
+      token: token,
+      user: user[0],
     });
 
   } catch (err) {
@@ -53,9 +54,15 @@ router.get("/login", async (req, res) => {
 });
 
 
-// ================== LOGIN (POST - BEST PRACTICE) ==================
+// ================== POST LOGIN (POSTMAN) ==================
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Email & password wajib diisi",
+    });
+  }
 
   try {
     const [user] = await db.query(
@@ -80,8 +87,15 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    const token = jwt.sign(
+      { id: user[0].id, email: user[0].email },
+      "secretkey",
+      { expiresIn: "1h" }
+    );
+
     res.json({
       message: "Login berhasil",
+      token: token,
       user: {
         id: user[0].id,
         nama: user[0].nama,
