@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-// ================== GET BOOKING ==================
+
+// ================== GET SEMUA BOOKING ==================
 router.get("/", async (req, res) => {
   try {
     const [result] = await db.query(`
@@ -34,12 +35,45 @@ router.get("/", async (req, res) => {
 });
 
 
+// ================== GET BOOKING BY USER ==================
+router.get("/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const [result] = await db.query(`
+      SELECT 
+        booking.id,
+        booking.tanggal,
+        booking.jam,
+        lapangan.nama_lapangan
+      FROM booking
+      JOIN lapangan ON booking.lapangan_id = lapangan.id
+      WHERE booking.user_id = ?
+      ORDER BY booking.tanggal DESC
+    `, [user_id]);
+
+    res.status(200).json({
+      status: "success",
+      total: result.length,
+      data: result
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      status: "error",
+      message: "Server error"
+    });
+  }
+});
+
+
 // ================== POST BOOKING ==================
 router.post("/", async (req, res) => {
   try {
     const { user_id, lapangan_id, tanggal, jam } = req.body;
 
-    // VALIDASI
+    // VALIDASI INPUT
     if (!user_id || !lapangan_id || !tanggal || !jam) {
       return res.status(400).json({
         status: "error",
@@ -49,7 +83,7 @@ router.post("/", async (req, res) => {
 
     // CEK USER
     const [user] = await db.query(
-      "SELECT * FROM users WHERE id = ?",
+      "SELECT id FROM users WHERE id = ?",
       [user_id]
     );
 
@@ -62,7 +96,7 @@ router.post("/", async (req, res) => {
 
     // CEK LAPANGAN
     const [lapangan] = await db.query(
-      "SELECT * FROM lapangan WHERE id = ?",
+      "SELECT id FROM lapangan WHERE id = ?",
       [lapangan_id]
     );
 
@@ -73,9 +107,9 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // CEK BENTROK
+    // CEK JADWAL BENTROK
     const [cek] = await db.query(
-      "SELECT * FROM booking WHERE lapangan_id = ? AND tanggal = ? AND jam = ?",
+      "SELECT id FROM booking WHERE lapangan_id = ? AND tanggal = ? AND jam = ?",
       [lapangan_id, tanggal, jam]
     );
 
@@ -86,7 +120,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // INSERT KE DATABASE
+    // INSERT
     await db.query(
       "INSERT INTO booking (user_id, lapangan_id, tanggal, jam) VALUES (?, ?, ?, ?)",
       [user_id, lapangan_id, tanggal, jam]
@@ -98,7 +132,16 @@ router.post("/", async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("ERROR BOOKING:", err);
+
+    // HANDLE FOREIGN KEY ERROR
+    if (err.code === "ER_NO_REFERENCED_ROW_2") {
+      return res.status(400).json({
+        status: "error",
+        message: "Relasi data tidak valid (foreign key error)"
+      });
+    }
+
     res.status(500).json({
       status: "error",
       message: "Server error"
