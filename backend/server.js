@@ -17,13 +17,13 @@ app.use((req, res, next) => {
 app.use("/auth", require("./routes/auth"));
 app.use("/lapangan", require("./routes/lapangan"));
 app.use("/booking", require("./routes/booking"));
-app.use("/riwayat", require("./routes/riwayat")); 
+app.use("/riwayat", require("./routes/riwayat"));  
 app.use("/jadwal", require("./routes/jadwal"));
 app.use("/register", require("./routes/register"));
 
 // ================= ROOT =================
 app.get("/", (req, res) => {
-  res.send("API Futsal Booking Jalan 🚀");
+  res.send("API Futsal Booking Jalan ");
 });
 
 // ================= HANDLE ROUTE TIDAK ADA =================
