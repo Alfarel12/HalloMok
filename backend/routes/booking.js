@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const { verifyToken } = require("../middleware/authMiddleware");
 
 
 // ================== GET SEMUA BOOKING ==================
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try {
     const [result] = await db.query(`
       SELECT 
@@ -35,9 +36,9 @@ router.get("/", async (req, res) => {
 });
 
 
-// ================== GET BOOKING BY USER ==================
-router.get("/:user_id", async (req, res) => {
-  const { user_id } = req.params;
+// ================== GET BOOKING USER (LOGIN) ==================
+router.get("/me", verifyToken, async (req, res) => {
+  const user_id = req.user.id;
 
   try {
     const [result] = await db.query(`
@@ -69,28 +70,16 @@ router.get("/:user_id", async (req, res) => {
 
 
 // ================== POST BOOKING ==================
-router.post("/", async (req, res) => {
+router.post("/", verifyToken, async (req, res) => {
   try {
-    const { user_id, lapangan_id, tanggal, jam } = req.body;
+    const user_id = req.user.id; // ambil dari token (AMAN)
+    const { lapangan_id, tanggal, jam } = req.body;
 
     // VALIDASI INPUT
-    if (!user_id || !lapangan_id || !tanggal || !jam) {
+    if (!lapangan_id || !tanggal || !jam) {
       return res.status(400).json({
         status: "error",
         message: "Semua data wajib diisi"
-      });
-    }
-
-    // CEK USER
-    const [user] = await db.query(
-      "SELECT id FROM users WHERE id = ?",
-      [user_id]
-    );
-
-    if (user.length === 0) {
-      return res.status(400).json({
-        status: "error",
-        message: "User tidak ditemukan"
       });
     }
 
@@ -134,7 +123,6 @@ router.post("/", async (req, res) => {
   } catch (err) {
     console.error("ERROR BOOKING:", err);
 
-    // HANDLE FOREIGN KEY ERROR
     if (err.code === "ER_NO_REFERENCED_ROW_2") {
       return res.status(400).json({
         status: "error",
