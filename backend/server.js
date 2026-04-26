@@ -7,7 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔥 LOG REQUEST (biar gampang debug)
+// 🔥 STATIC FILE (BIAR BISA AKSES /uploads)
+app.use("/uploads", express.static("uploads"));
+
+// 🔥 LOG REQUEST (DEBUG)
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
@@ -20,10 +23,23 @@ app.use("/booking", require("./routes/booking"));
 app.use("/riwayat", require("./routes/riwayat"));  
 app.use("/jadwal", require("./routes/jadwal"));
 app.use("/register", require("./routes/register"));
+app.use("/upload", require("./routes/upload")); // ✅ upload route
 
 // ================= ROOT =================
 app.get("/", (req, res) => {
-  res.send("API Futsal Booking Jalan ");
+  res.json({
+    message: "API Futsal Booking Jalan 🚀",
+    endpoints: [
+      "/register",
+      "/auth/login",
+      "/lapangan",
+      "/booking",
+      "/jadwal",
+      "/riwayat",
+      "/upload",
+      "/uploads/:filename"
+    ]
+  });
 });
 
 // ================= HANDLE ROUTE TIDAK ADA =================
@@ -37,6 +53,15 @@ app.use((req, res) => {
 // ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {
   console.error("GLOBAL ERROR:", err);
+
+  // khusus error multer (upload)
+  if (err.message.includes("File")) {
+    return res.status(400).json({
+      status: "error",
+      message: err.message
+    });
+  }
+
   res.status(500).json({
     status: "error",
     message: "Terjadi kesalahan pada server"
@@ -44,6 +69,8 @@ app.use((err, req, res, next) => {
 });
 
 // ================= SERVER =================
-app.listen(3000, () => {
-  console.log("Server jalan di 3000");
+const PORT = 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server jalan di http://localhost:${PORT}`);
 });
