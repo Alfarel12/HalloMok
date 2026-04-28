@@ -4,11 +4,22 @@ const db = require('../db')
 
 // GET semua jadwal
 router.get('/', (req, res) => {
+  const { lapangan_id, tanggal } = req.query
+
+  // VALIDASI
+  if (!lapangan_id || !tanggal) {
+    return res.status(400).json({
+      message: 'lapangan_id dan tanggal wajib diisi'
+    })
+  }
+
   db.query(
     `SELECT jadwal.id, jadwal.tanggal, jadwal.jam,
             lapangan.nama_lapangan AS nama_lapangan
      FROM jadwal
-     LEFT JOIN lapangan ON jadwal.lapangan_id = lapangan.id`,
+     LEFT JOIN lapangan ON jadwal.lapangan_id = lapangan.id
+     WHERE jadwal.lapangan_id = ? AND jadwal.tanggal = ?`,
+    [lapangan_id, tanggal],
     (err, result) => {
       if (err) {
         return res.status(500).json({
@@ -17,7 +28,10 @@ router.get('/', (req, res) => {
         })
       }
 
-      res.json(result)
+      res.json({
+        status: "success",
+        data: result
+      })
     }
   )
 })
