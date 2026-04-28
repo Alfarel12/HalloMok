@@ -7,12 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ STATIC FILE public/uploads
+// ✅ STATIC FILE (WAJIB)
 app.use("/uploads", express.static("public/uploads"));
 
 
-// DEBUG
-app.use((req,res,next)=>{
+// ================= DEBUG =================
+app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
@@ -25,57 +25,50 @@ app.use("/booking", require("./routes/booking"));
 app.use("/riwayat", require("./routes/riwayat"));
 app.use("/jadwal", require("./routes/jadwal"));
 app.use("/register", require("./routes/register"));
-app.use("/upload", require("./routes/upload"));
+
+// ✅ FIX UPLOAD
+const uploadRoute = require("./routes/upload");
+app.use("/upload", uploadRoute.router);
 
 
 // ================= ROOT =================
-app.get("/",(req,res)=>{
+app.get("/", (req, res) => {
   res.json({
-    message:"API Futsal Booking Jalan 🚀",
-    endpoints:[
-      "/register",
-      "/auth/login",
-      "/lapangan",
-      "/booking",
-      "/jadwal",
-      "/riwayat",
-      "/upload",
-      "/uploads/:filename"
-    ]
+    message: "API Futsal Booking Jalan 🚀"
   });
 });
 
 
 // ================= 404 =================
-app.use((req,res)=>{
+app.use((req, res) => {
   res.status(404).json({
-    status:"error",
-    message:"Route tidak ditemukan"
+    status: "error",
+    message: "Route tidak ditemukan"
   });
 });
 
 
 // ================= GLOBAL ERROR =================
-app.use((err,req,res,next)=>{
-  console.error("GLOBAL ERROR:",err);
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR:", err);
 
-  if(err.message.includes("File")){
+  if (err.message && err.message.includes("File")) {
     return res.status(400).json({
-      status:"error",
-      message:err.message
+      status: "error",
+      message: err.message
     });
   }
 
   res.status(500).json({
-    status:"error",
-    message:"Terjadi kesalahan pada server"
+    status: "error",
+    message: "Terjadi kesalahan pada server"
   });
 });
 
 
 // ================= SERVER =================
-const PORT=3000;
+const PORT = 3000;
 
-app.listen(PORT,()=>{
+app.listen(PORT, () => {
   console.log(`Server jalan di http://localhost:${PORT}`);
 });
