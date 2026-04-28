@@ -6,10 +6,11 @@ const db = require('../db')
 router.get('/', (req, res) => {
   const { lapangan_id, tanggal } = req.query
 
-  // VALIDASI
+  // 🔴 VALIDASI QUERY
   if (!lapangan_id || !tanggal) {
     return res.status(400).json({
-      message: 'lapangan_id dan tanggal wajib diisi'
+      status: "error",
+      message: "lapangan_id dan tanggal wajib diisi"
     })
   }
 
@@ -21,13 +22,26 @@ router.get('/', (req, res) => {
      WHERE jadwal.lapangan_id = ? AND jadwal.tanggal = ?`,
     [lapangan_id, tanggal],
     (err, result) => {
+
+      // 🔴 ERROR DATABASE
       if (err) {
         return res.status(500).json({
-          message: 'Gagal mengambil data jadwal',
+          status: "error",
+          message: "Gagal mengambil data jadwal",
           error: err
         })
       }
 
+      // 🔴 DATA KOSONG (INI YANG SPRINT 5 MINTA)
+      if (result.length === 0) {
+        return res.status(200).json({
+          status: "success",
+          message: "Data tidak ditemukan",
+          data: []
+        })
+      }
+
+      // ✅ SUCCESS
       res.json({
         status: "success",
         data: result
