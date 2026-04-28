@@ -6,7 +6,7 @@ const db = require('../db')
 router.get('/', (req, res) => {
   const { lapangan_id, tanggal } = req.query
 
-  // 🔴 VALIDASI QUERY
+  // VALIDASI QUERY
   if (!lapangan_id || !tanggal) {
     return res.status(400).json({
       status: "error",
@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
     [lapangan_id, tanggal],
     (err, result) => {
 
-      // 🔴 ERROR DATABASE
+      // ERROR DATABASE
       if (err) {
         return res.status(500).json({
           status: "error",
@@ -32,7 +32,7 @@ router.get('/', (req, res) => {
         })
       }
 
-      // 🔴 DATA KOSONG (INI YANG SPRINT 5 MINTA)
+      // DATA KOSONG 
       if (result.length === 0) {
         return res.status(200).json({
           status: "success",
@@ -41,7 +41,7 @@ router.get('/', (req, res) => {
         })
       }
 
-      // ✅ SUCCESS
+      // SUCCESS
       res.json({
         status: "success",
         data: result
