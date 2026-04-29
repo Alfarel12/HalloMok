@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./db");
+const path = require("path");
 
 const app = express();
 
@@ -25,6 +26,11 @@ app.use("/booking", require("./routes/booking"));
 // RIWAYAT
 app.use("/riwayat", require("./routes/riwayat"));
 
+// UPLOAD
+app.use("/upload", require("./routes/upload"));
+
+// Akses gambar via browser
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // ================== API CEK JADWAL ==================
 // (DIGANTI DARI /jadwal → /cek-jadwal BIAR TIDAK BENTROK)

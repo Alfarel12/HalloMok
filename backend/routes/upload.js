@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const { success, error } = require("../utils/response");
+const path = require("path");
 
 // STORAGE
 const storage = multer.diskStorage({
@@ -57,7 +58,4 @@ router.post("/", (req, res) => {
 });
 
 // ✅ PENTING
-module.exports = {
-  router,
-  upload
-};
+module.exports = router;  
