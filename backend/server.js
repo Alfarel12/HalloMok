@@ -1,81 +1,104 @@
 const express = require("express");
 const cors = require("cors");
+const db = require("./db");
 
 const app = express();
 
-// ================= MIDDLEWARE =================
+// ================== MIDDLEWARE ==================
 app.use(cors());
 app.use(express.json());
 
-// ✅ STATIC FILE public/uploads
-app.use("/uploads", express.static("public/uploads"));
+// ================== ROUTES ==================
 
-
-// DEBUG
-app.use((req,res,next)=>{
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
-
-
-// ================= ROUTES =================
+// AUTH
 app.use("/auth", require("./routes/auth"));
+
+// LAPANGAN
 app.use("/lapangan", require("./routes/lapangan"));
-app.use("/booking", require("./routes/booking"));
-app.use("/riwayat", require("./routes/riwayat"));
+
+// JADWAL CRUD (ADMIN)
 app.use("/jadwal", require("./routes/jadwal"));
-app.use("/register", require("./routes/register"));
-app.use("/upload", require("./routes/upload"));
+
+// BOOKING
+app.use("/booking", require("./routes/booking"));
+
+// RIWAYAT
+app.use("/riwayat", require("./routes/riwayat"));
 
 
-// ================= ROOT =================
-app.get("/",(req,res)=>{
-  res.json({
-    message:"API Futsal Booking Jalan 🚀",
-    endpoints:[
-      "/register",
-      "/auth/login",
-      "/lapangan",
-      "/booking",
-      "/jadwal",
-      "/riwayat",
-      "/upload",
-      "/uploads/:filename"
-    ]
-  });
-});
+// ================== API CEK JADWAL ==================
+// (DIGANTI DARI /jadwal → /cek-jadwal BIAR TIDAK BENTROK)
 
+app.get("/cek-jadwal", (req, res) => {
+  const { lapangan_id, tanggal } = req.query;
 
-// ================= 404 =================
-app.use((req,res)=>{
-  res.status(404).json({
-    status:"error",
-    message:"Route tidak ditemukan"
-  });
-});
-
-
-// ================= GLOBAL ERROR =================
-app.use((err,req,res,next)=>{
-  console.error("GLOBAL ERROR:",err);
-
-  if(err.message.includes("File")){
+  // VALIDASI INPUT
+  if (!lapangan_id || !tanggal) {
     return res.status(400).json({
-      status:"error",
-      message:err.message
+      status: "error",
+      message: "lapangan_id dan tanggal wajib diisi"
     });
   }
 
-  res.status(500).json({
-    status:"error",
-    message:"Terjadi kesalahan pada server"
+  // AMBIL HARI
+  const hari = new Date(tanggal).toLocaleDateString("id-ID", {
+    weekday: "long"
   });
+
+  db.query(
+    `SELECT jam FROM booking 
+     WHERE lapangan_id = ? AND tanggal = ?`,
+    [lapangan_id, tanggal],
+    (err, result) => {
+
+      if (err) {
+        return res.status(500).json({
+          status: "error",
+          message: err
+        });
+      }
+
+      // JAM OPERASIONAL
+      const semuaJam = [
+        "16:00:00",
+        "17:00:00",
+        "18:00:00",
+        "19:00:00",
+        "20:00:00",
+        "21:00:00"
+      ];
+
+      // JAM YANG SUDAH DIBOOKING
+      const jamTerbooking = result.map(r => r.jam);
+
+      // FILTER JAM TERSEDIA
+      const jamTersedia = semuaJam.filter(
+        jam => !jamTerbooking.includes(jam)
+      );
+
+      res.status(200).json({
+        status: "success",
+        tanggal,
+        hari,
+        jam_terbooking: jamTerbooking,
+        jam_tersedia: jamTersedia
+      });
+    }
+  );
 });
 
 
-// ================= SERVER =================
-const PORT=3000;
+// ================== DEFAULT ROUTE ==================
 
-app.listen(PORT,()=>{
+app.get("/", (req, res) => {
+  res.send("API Futsal Booking Jalan 🚀");
+});
+
+
+// ================== SERVER ==================
+
+const PORT = 3000;
+
+app.listen(PORT, () => {
   console.log(`Server jalan di http://localhost:${PORT}`);
 });
