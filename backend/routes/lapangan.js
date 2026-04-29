@@ -1,138 +1,76 @@
-const router = require("express").Router();
-const db = require("../db");
-const { success, error } = require("../utils/response");
-const { verifyToken, isAdmin } = require("../middleware/authMiddleware");
+const express = require('express')
+const router = express.Router()
+const db = require('../db')
 
-
-// ================= GET (USER + ADMIN) =================
-router.get("/", verifyToken, async (req, res) => {
-  try {
-
-    const [data] = await db.query(
-      "SELECT * FROM lapangan"
-    );
-
-    if (data.length === 0) {
-      return error(
-        res,
-        "Data lapangan kosong",
-        404
-      );
+// GET semua lapangan
+router.get('/', (req, res) => {
+  db.query('SELECT * FROM lapangan', (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message })
     }
+    res.json(results)
+  })
+})
 
-    return success(
-      res,
-      data,
-      "Data lapangan berhasil diambil"
-    );
+// GET lapangan berdasarkan ID
+router.get('/:id', (req, res) => {
+  const id = req.params.id
 
-  } catch (err) {
+  db.query('SELECT * FROM lapangan WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message })
+    }
+    res.json(results)
+  })
+})
 
-    console.log("ERROR LAPANGAN:", err);
+// POST tambah lapangan
+router.post('/', (req, res) => {
+  const { nama, harga } = req.body
 
-    return error(
-      res,
-      err.message
-    );
+  if (!nama || !harga) {
+    return res.status(400).json({ message: 'Nama dan harga harus diisi' })
   }
-});
 
-
-// ================= POST (ADMIN ONLY) =================
-router.post("/", verifyToken, isAdmin, async (req, res) => {
-  try {
-
-    const {
-      nama_lapangan,
-      harga,
-      deskripsi
-    } = req.body;
-
-    if (!nama_lapangan || !harga) {
-      return error(
-        res,
-        "nama_lapangan dan harga wajib diisi",
-        400
-      );
+  db.query(
+    'INSERT INTO lapangan (nama, harga) VALUES (?, ?)',
+    [nama, harga],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message })
+      }
+      res.json({ message: 'Lapangan berhasil ditambahkan' })
     }
+  )
+})
 
-    await db.query(
-      `INSERT INTO lapangan
-      (nama_lapangan,harga,deskripsi)
-      VALUES (?,?,?)`,
-      [
-        nama_lapangan,
-        harga,
-        deskripsi
-      ]
-    );
+// PUT update lapangan
+router.put('/:id', (req, res) => {
+  const id = req.params.id
+  const { nama, harga } = req.body
 
-    return success(
-      res,
-      null,
-      "Lapangan berhasil ditambahkan"
-    );
-
-  } catch (err) {
-
-    console.log("ERROR POST LAPANGAN:", err);
-
-    return error(
-      res,
-      err.message
-    );
-  }
-});
-
-
-// ================= DELETE (ADMIN ONLY) =================
-router.delete("/:id", verifyToken, isAdmin, async (req, res) => {
-  try {
-
-    const { id } = req.params;
-
-    if (!id) {
-      return error(
-        res,
-        "ID wajib diisi",
-        400
-      );
+  db.query(
+    'UPDATE lapangan SET nama = ?, harga = ? WHERE id = ?',
+    [nama, harga, id],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message })
+      }
+      res.json({ message: 'Lapangan berhasil diupdate' })
     }
+  )
+})
 
-    const [cek] = await db.query(
-      "SELECT * FROM lapangan WHERE id = ?",
-      [id]
-    );
+// DELETE lapangan
+router.delete('/:id', (req, res) => {
+  const id = req.params.id
 
-    if (cek.length === 0) {
-      return error(
-        res,
-        "Lapangan tidak ditemukan",
-        404
-      );
+  db.query('DELETE FROM lapangan WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message })
     }
+    res.json({ message: 'Lapangan berhasil dihapus' })
+  })
+})
 
-    await db.query(
-      "DELETE FROM lapangan WHERE id = ?",
-      [id]
-    );
-
-    return success(
-      res,
-      null,
-      "Lapangan berhasil dihapus"
-    );
-
-  } catch (err) {
-
-    console.log("ERROR DELETE LAPANGAN:", err);
-
-    return error(
-      res,
-      err.message
-    );
-  }
-});
-
-
-module.exports = router;
+module.exports = router
